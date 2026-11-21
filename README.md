@@ -5,15 +5,15 @@ A simple drawing app for toddlers, with big buttons and a PIN-protected parent a
 ## What it does
 
 - **Drawing paper** that fills most of the screen. Several fingers can draw at once.
-- **10 colours**: red, orange, yellow, green, light blue, dark blue, purple, pink, brown and black.
-- **3 brush sizes** (small, medium, big). The size buttons show a dot in the current colour.
-- **Eraser** (purple button). Tap it again, or tap a colour, to go back to drawing.
+- **10 colours** in one line that scrolls across: red, orange, yellow, green, light blue, dark blue, purple, pink, brown and black. One brush size.
+- **Eraser** (purple button, at the start of the colour line). Tap it again, or tap a colour, to go back to drawing.
+- **Home** (grey house) goes to the phone's home screen, such as Toddler Launcher. The drawing is still there when the app is opened again.
 - **Undo** (orange) takes away the last stroke. It can also bring back a cleared drawing.
 - **Clear** (red bin) has to be **held for 1 second**. A ring fills up while it's held; a quick tap just makes it wiggle.
 - **Save** (green) keeps the drawing in the app's own gallery and shows a big tick.
 - **Gallery** (blue) shows only the saved doodles, never the phone's photos. Tap one to see it full screen, with arrows for the next and previous.
 - The Back button is ignored on the drawing screen so a stray tap doesn't lose the drawing. Home still works.
-- It works in portrait (buttons underneath) and landscape (buttons down the right).
+- It works in portrait (two lines of buttons underneath) and landscape (two columns down the right, the colours scroll up and down).
 
 ## Parent area
 

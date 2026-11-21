@@ -29,9 +29,6 @@ class Settings(ctx: Context) {
     var colour: Int // index into Ui.CRAYONS
         get() = getI("colour", 0).coerceIn(0, Ui.CRAYONS.size - 1)
         set(v) = putI("colour", v)
-    var size: Int // 0 small, 1 medium, 2 big
-        get() = getI("size", 1).coerceIn(0, 2)
-        set(v) = putI("size", v)
 
     // ---------- Parent PIN (stored as a salted hash, never the PIN itself) ----------
     fun checkPin(pin: String): Boolean {

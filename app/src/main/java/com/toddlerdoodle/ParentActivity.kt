@@ -42,7 +42,7 @@ class ParentActivity : Activity() {
         rows.switchRow("Save button", settings.showSave) { settings.showSave = it; it }
         rows.switchRow("Eraser", settings.showEraser) { settings.showEraser = it; it }
         rows.switchRow("Gallery button", settings.showGallery) { settings.showGallery = it; it }
-        rows.note("Colours, brush sizes, undo and clear are always shown. Clear has to be held for 1 second.")
+        rows.note("Colours, home, undo and clear are always shown. Clear has to be held for 1 second.")
 
         rows.header("Doodles")
         val count = Doodles.list(this).size

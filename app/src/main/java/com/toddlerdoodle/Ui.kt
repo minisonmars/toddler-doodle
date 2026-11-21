@@ -37,8 +37,8 @@ object Ui {
         Color.rgb(33, 33, 33), // black
     )
 
-    /** Brush widths in dp: small, medium, big. */
-    val SIZES_DP = floatArrayOf(8f, 18f, 36f)
+    /** Brush width in dp (the eraser is half as wide again). */
+    const val BRUSH_DP = 18f
 
     fun dp(ctx: Context, v: Int): Int = (v * ctx.resources.displayMetrics.density).toInt()
 

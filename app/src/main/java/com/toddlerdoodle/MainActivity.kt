@@ -9,17 +9,18 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import kotlin.math.min
 
-/** The drawing screen: paper, 10 colours, 3 brush sizes, eraser, undo, clear, save and gallery. */
+/** The drawing screen: paper, 10 colours, eraser, home, undo, clear, save and gallery. */
 class MainActivity : Activity() {
 
     private lateinit var settings: Settings
     private lateinit var doodle: DoodleView
 
     private val colourButtons = mutableListOf<RoundIconButton>()
-    private val sizeButtons = mutableListOf<RoundIconButton>()
     private var eraserButton: RoundIconButton? = null
     private var frame: FrameLayout? = null
 
@@ -68,13 +69,12 @@ class MainActivity : Activity() {
 
     /**
      * Portrait: paper on top, buttons underneath. Landscape: paper on the left,
-     * buttons down the right. The buttons are in 4 lines: 5 colours, 5 colours,
-     * brush sizes and eraser, then undo, clear, save and gallery.
+     * buttons down the right. The buttons are in 2 lines: the eraser and the
+     * colours (which scroll), then home, undo, clear, save and gallery.
      */
     private fun build() {
         (doodle.parent as? ViewGroup)?.removeView(doodle)
         colourButtons.clear()
-        sizeButtons.clear()
         eraserButton = null
 
         val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -109,30 +109,11 @@ class MainActivity : Activity() {
             panel.addView(l)
         }
 
-        Ui.CRAYONS.forEachIndexed { i, c ->
-            colourButtons.add(RoundIconButton(this, Icon.NONE, c).apply {
-                setOnClickListener {
-                    settings.colour = i
-                    eraserOn = false
-                    refresh()
-                }
-            })
+        // Line 1: the eraser, then the colours, which scroll across if they don't all fit
+        val colourLine = LinearLayout(this).apply {
+            orientation = if (landscape) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
         }
-        line(colourButtons.subList(0, 5))
-        line(colourButtons.subList(5, 10))
-
-        val tools = mutableListOf<View>()
-        val dotSizes = floatArrayOf(0.09f, 0.17f, 0.27f)
-        for (i in 0..2) {
-            sizeButtons.add(RoundIconButton(this, Icon.DOT, Color.WHITE).apply {
-                dotSize = dotSizes[i]
-                setOnClickListener {
-                    settings.size = i
-                    refresh()
-                }
-            })
-        }
-        tools.addAll(sizeButtons)
         if (settings.showEraser) {
             eraserButton = RoundIconButton(this, Icon.ERASER, Ui.PURPLE).apply {
                 setOnClickListener {
@@ -140,11 +121,46 @@ class MainActivity : Activity() {
                     refresh()
                 }
             }
-            tools.add(eraserButton!!)
+            colourLine.addView(eraserButton, LinearLayout.LayoutParams(cell, cell).apply { setMargins(margin, margin, margin, margin) })
         }
-        line(tools)
+        val slot = cell + margin * 2
+        val scrollRoom = lineLength - dp(12) - (if (settings.showEraser) slot else 0)
+        // About four and a half colours show at a time, so the cut-off one hints that there are more
+        val colourSlot = min(slot, (scrollRoom / 4.5f).toInt())
+        val colourCell = colourSlot - margin * 2
+        val colours = LinearLayout(this).apply {
+            orientation = if (landscape) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        Ui.CRAYONS.forEachIndexed { i, c ->
+            val b = RoundIconButton(this, Icon.NONE, c).apply {
+                setOnClickListener {
+                    settings.colour = i
+                    eraserOn = false
+                    refresh()
+                }
+            }
+            colourButtons.add(b)
+            colours.addView(b, LinearLayout.LayoutParams(colourCell, colourCell).apply { setMargins(margin, margin, margin, margin) })
+        }
+        val scroller: ViewGroup = if (landscape) ScrollView(this) else HorizontalScrollView(this)
+        scroller.isVerticalScrollBarEnabled = false
+        scroller.isHorizontalScrollBarEnabled = false
+        scroller.addView(colours)
+        colourLine.addView(
+            scroller,
+            if (landscape) LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, 0, 1f)
+            else LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        )
+        panel.addView(
+            colourLine,
+            if (landscape) LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            else LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        )
 
+        // Line 2: home, undo, clear, save and gallery
         val actions = mutableListOf<View>()
+        actions.add(RoundIconButton(this, Icon.HOME, Ui.GREY).apply { setOnClickListener { goHome() } })
         actions.add(RoundIconButton(this, Icon.UNDO, Ui.ORANGE).apply { setOnClickListener { doodle.undo() } })
         val clear = HoldButton(this, Icon.BIN, Ui.RED, 1000L) { doodle.clear() }
         clear.onTooShort = { wiggle(clear) }
@@ -174,18 +190,14 @@ class MainActivity : Activity() {
         refresh()
     }
 
-    /** Shows which colour, size and tool are chosen, and passes them to the paper. */
+    /** Shows which colour or the eraser is chosen, and passes them to the paper. */
     private fun refresh() {
         val colour = Ui.CRAYONS[settings.colour]
         colourButtons.forEachIndexed { i, b -> b.chosen = !eraserOn && i == settings.colour }
-        sizeButtons.forEachIndexed { i, b ->
-            b.chosen = i == settings.size
-            b.dotColour = if (eraserOn) Color.WHITE else colour
-        }
         eraserButton?.chosen = eraserOn
         doodle.colour = colour
         doodle.eraser = eraserOn
-        doodle.widthPx = Ui.SIZES_DP[settings.size] * resources.displayMetrics.density
+        doodle.widthPx = Ui.BRUSH_DP * resources.displayMetrics.density
     }
 
     // ---------- Actions ----------
@@ -234,6 +246,15 @@ class MainActivity : Activity() {
                 v.animate().rotation(0f).setDuration(70).start()
             }.start()
         }.start()
+    }
+
+    /** Goes to the phone's home screen (Toddler Launcher, if that's the home app). The drawing is kept. */
+    private fun goHome() {
+        try {
+            startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: Exception) {
+            moveTaskToBack(true)
+        }
     }
 
     private fun openParent() {
