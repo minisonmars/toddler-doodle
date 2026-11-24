@@ -5,6 +5,10 @@ Each build uses the "Next" section as its release notes on GitHub, then renames 
 
 ## Next
 
+- (nothing yet)
+
+## v0.1.3
+
 - Automatic update check: the app quietly looks for a new version on GitHub (when the parent area opens, and at most every 6 hours otherwise). When there is one, "App updates" in the parent area turns red and says which version
 - New versions screen, the same as the other apps: new versions with what changed at the top, then the installed version, older versions behind "Show older versions", and reinstall
 
