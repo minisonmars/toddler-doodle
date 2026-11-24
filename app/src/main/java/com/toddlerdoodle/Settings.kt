@@ -30,6 +30,14 @@ class Settings(ctx: Context) {
         get() = getI("colour", 0).coerceIn(0, Ui.CRAYONS.size - 1)
         set(v) = putI("colour", v)
 
+    // ---------- Automatic update check ----------
+    var updateCheckedAt: Long
+        get() = p.getLong("updateCheckedAt", 0L)
+        set(v) = p.edit().putLong("updateCheckedAt", v).apply()
+    var latestVersion: String // newest version seen on GitHub
+        get() = p.getString("latestVersion", "") ?: ""
+        set(v) = p.edit().putString("latestVersion", v).apply()
+
     // ---------- Parent PIN (stored as a salted hash, never the PIN itself) ----------
     fun checkPin(pin: String): Boolean {
         val salt = p.getString("pinSalt", null)

@@ -38,6 +38,7 @@ class MainActivity : Activity() {
         if (!settings.showEraser) eraserOn = false
         build() // the parent area may have changed which buttons show
         hideBars()
+        Updater.checkInBackground(this) // quietly, at most every 6 hours; shown only in the parent area
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

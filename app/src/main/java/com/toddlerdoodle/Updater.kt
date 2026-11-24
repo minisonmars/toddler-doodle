@@ -8,6 +8,13 @@ import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.net.Uri
 import android.os.Build
+import android.graphics.Typeface
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.Spinner
 import android.widget.TextView
 import org.json.JSONArray
 import java.io.File
@@ -21,7 +28,10 @@ object Updater {
 
     const val OWN_REPO = "minisonmars/toddler-doodle"
 
-    class Release(val version: String, val date: String, val apkUrl: String, val sizeBytes: Long)
+    /** Only APKs whose name starts with this are this app's. */
+    private const val APK_PREFIX = "ToddlerDoodle"
+
+    class Release(val version: String, val date: String, val apkUrl: String, val sizeBytes: Long, val notes: String = "")
 
     fun installedVersion(ctx: Context): String =
         try {
@@ -49,13 +59,15 @@ object Updater {
                 val assets = r.getJSONArray("assets")
                 for (j in 0 until assets.length()) {
                     val a = assets.getJSONObject(j)
-                    if (a.getString("name").endsWith(".apk")) {
+                    val name = a.getString("name")
+                    if (name.endsWith(".apk") && name.startsWith(APK_PREFIX)) {
                         out.add(
                             Release(
                                 r.getString("tag_name").removePrefix("v"),
                                 r.optString("published_at", "").take(10),
                                 a.getString("browser_download_url"),
-                                a.optLong("size", 0L)
+                                a.optLong("size", 0L),
+                                r.optString("body", "").trim()
                             )
                         )
                         break
@@ -66,6 +78,37 @@ object Updater {
         } finally {
             conn.disconnect()
         }
+    }
+
+    // ---------- Automatic update check ----------
+
+    private const val CHECK_EVERY_MS = 6 * 60 * 60_000L
+    @Volatile private var checking = false
+
+    /** Quietly checks GitHub at most every 6 hours (or now if [force]); the answer is saved in settings. */
+    fun checkInBackground(ctx: Context, force: Boolean = false, done: (() -> Unit)? = null) {
+        val settings = Settings(ctx)
+        val now = System.currentTimeMillis()
+        if (checking || (!force && now - settings.updateCheckedAt < CHECK_EVERY_MS)) return
+        checking = true
+        Thread {
+            try {
+                val latest = fetchReleases().firstOrNull()
+                settings.updateCheckedAt = System.currentTimeMillis()
+                if (latest != null && latest.version != settings.latestVersion) settings.latestVersion = latest.version
+                if (done != null) android.os.Handler(android.os.Looper.getMainLooper()).post(done)
+            } catch (e: Exception) {
+                // no internet or GitHub busy: try again next time
+            } finally {
+                checking = false
+            }
+        }.start()
+    }
+
+    /** The newer version waiting to be installed, or null. */
+    fun available(ctx: Context): String? {
+        val v = Settings(ctx).latestVersion
+        return if (v.isNotEmpty() && compare(v, installedVersion(ctx)) > 0) v else null
     }
 
     /** Compares version numbers like 0.1.10 and 0.1.9 part by part. */
@@ -137,7 +180,7 @@ object Updater {
         }
     }
 
-    // ---------- The update screens, used from the parent area ----------
+    // ---------- The versions screen, used from the parent area ----------
 
     /** Shows the list of versions: install the latest, or pick another one. */
     fun showDialog(activity: Activity) {
@@ -166,6 +209,7 @@ object Updater {
         }.start()
     }
 
+    /** Newer versions with what changed, then the installed version, then older versions behind a button. */
     private fun showList(activity: Activity, list: List<Release>) {
         val current = installedVersion(activity)
         if (list.isEmpty()) {
@@ -174,26 +218,105 @@ object Updater {
                 .setPositiveButton("OK", null).show()
             return
         }
-        val latest = list.first()
-        val labels = list.map { r ->
-            val tag = when {
-                r.version == current -> "  (installed)"
-                r === latest -> "  (latest)"
-                else -> ""
-            }
-            String.format(Locale.UK, "%s   %s   %.1f MB%s", r.version, r.date, r.sizeBytes / 1_048_576.0, tag)
-        }.toTypedArray()
-
-        val builder = AlertDialog.Builder(activity)
-            .setTitle("You have version $current")
-            .setItems(labels) { _, which -> choose(activity, list[which], current) }
-            .setNegativeButton("Close", null)
-        if (compare(latest.version, current) > 0) {
-            builder.setPositiveButton("Install latest (${latest.version})") { _, _ ->
-                choose(activity, latest, current)
-            }
+        fun dp(v: Int) = Ui.dp(activity, v)
+        val col = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), dp(8))
         }
-        builder.show()
+        lateinit var dialog: AlertDialog
+        fun text(s: String, size: Float, bold: Boolean = false, colour: Int? = null) = TextView(activity).apply {
+            text = s
+            textSize = size
+            if (bold) typeface = Typeface.DEFAULT_BOLD
+            if (colour != null) setTextColor(colour)
+            setPadding(0, dp(4), 0, dp(4))
+        }
+        fun info(r: Release) = String.format(Locale.UK, "%s  ·  %.1f MB", r.date, r.sizeBytes / 1_048_576.0)
+        fun notes(r: Release) = r.notes.ifBlank { "No notes for this version." }
+
+        val newer = list.filter { compare(it.version, current) > 0 }
+        if (newer.isEmpty()) {
+            col.addView(text("You have the latest version.", 16f))
+        } else {
+            col.addView(text(if (newer.size == 1) "New version" else "${newer.size} new versions", 18f, bold = true))
+            for (r in newer) {
+                col.addView(text("Version ${r.version}" + if (r === newer.first()) "  (latest)" else "", 17f, bold = true)
+                    .apply { setPadding(0, dp(12), 0, 0) })
+                col.addView(text(info(r), 13f, colour = Ui.GREY))
+                col.addView(text(notes(r), 15f))
+            }
+            col.addView(Button(activity).apply {
+                text = "Install version ${newer.first().version}"
+                isAllCaps = false
+                setOnClickListener {
+                    dialog.dismiss()
+                    start(activity, newer.first())
+                }
+            })
+        }
+
+        val installed = list.firstOrNull { it.version == current }
+        col.addView(text("Installed: version $current", 18f, bold = true, colour = Ui.GREEN)
+            .apply { if (newer.isNotEmpty()) setPadding(0, dp(22), 0, dp(4)) })
+        if (installed != null) col.addView(text(notes(installed), 14f, colour = Ui.GREY))
+
+        val older = list.filter { compare(it.version, current) < 0 }
+        if (older.isNotEmpty()) {
+            // Older versions stay out of the way until asked for
+            val olderBox = android.widget.LinearLayout(activity).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                visibility = android.view.View.GONE
+            }
+            val showOlder = Button(activity).apply {
+                text = "Show older versions (${older.size})"
+                isAllCaps = false
+            }
+            showOlder.setOnClickListener {
+                showOlder.visibility = android.view.View.GONE
+                olderBox.visibility = android.view.View.VISIBLE
+            }
+            col.addView(showOlder)
+            col.addView(olderBox)
+            olderBox.addView(text("Older versions", 18f, bold = true).apply { setPadding(0, dp(22), 0, dp(4)) })
+            val spinner = Spinner(activity)
+            val adapter = ArrayAdapter(activity, android.R.layout.simple_spinner_item, older.map { "${it.version}  (${it.date})" })
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            spinner.adapter = adapter
+            olderBox.addView(spinner)
+            val olderNotes = text(notes(older.first()), 14f, colour = Ui.GREY)
+            olderBox.addView(olderNotes)
+            spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(p: AdapterView<*>?, v: android.view.View?, pos: Int, id: Long) {
+                    olderNotes.text = notes(older[pos])
+                }
+                override fun onNothingSelected(p: AdapterView<*>?) {}
+            }
+            olderBox.addView(Button(activity).apply {
+                text = "Go back to this version"
+                isAllCaps = false
+                setOnClickListener {
+                    dialog.dismiss()
+                    explainOlder(activity, older[spinner.selectedItemPosition.coerceAtLeast(0)])
+                }
+            })
+        }
+        if (installed != null) {
+            col.addView(Button(activity).apply {
+                text = "Reinstall version $current"
+                isAllCaps = false
+                setOnClickListener {
+                    dialog.dismiss()
+                    choose(activity, installed, current)
+                }
+            })
+        }
+
+        dialog = AlertDialog.Builder(activity)
+            .setTitle("App versions")
+            .setView(ScrollView(activity).apply { addView(col) })
+            .setNegativeButton("Close", null)
+            .create()
+        dialog.show()
     }
 
     private fun choose(activity: Activity, r: Release, current: String) {
@@ -220,7 +343,8 @@ object Updater {
                     "Uninstalling deletes them.\n" +
                     "2. Tap Download below. Your browser saves the older APK.\n" +
                     "3. Uninstall Toddler Doodle (Android Settings > Apps).\n" +
-                    "4. Open the downloaded APK from your Downloads to install it."
+                    "4. Open the downloaded APK from your Downloads to install it.\n" +
+                    "5. Set the parent PIN and buttons again."
             )
             .setPositiveButton("Download") { _, _ ->
                 open(activity, Intent(Intent.ACTION_VIEW, Uri.parse(r.apkUrl)))

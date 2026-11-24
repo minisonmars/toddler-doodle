@@ -29,6 +29,8 @@ class ParentActivity : Activity() {
     override fun onResume() {
         super.onResume()
         build()
+        // Check GitHub for a new version now, and show it as soon as the answer comes back
+        Updater.checkInBackground(this, force = true) { if (!isFinishing) build() }
     }
 
     private fun build() {
@@ -67,9 +69,14 @@ class ParentActivity : Activity() {
         rows.note("To open this area, hold the grey gear on the drawing screen for 2 seconds.")
 
         rows.header("Updates")
-        rows.menuItem("App updates", "You have version ${Updater.installedVersion(this)}. Install the latest or pick another.") {
-            Updater.showDialog(this)
-        }
+        val newVersion = Updater.available(this)
+        val have = Updater.installedVersion(this)
+        rows.menuItem(
+            "App updates",
+            if (newVersion != null) "Version $newVersion is ready to install (you have $have)"
+            else "You have version $have. See what changed, or pick another version.",
+            warn = newVersion != null
+        ) { Updater.showDialog(this) }
 
         scroll.post { scroll.scrollTo(0, y) }
     }

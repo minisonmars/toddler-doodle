@@ -22,7 +22,7 @@ Hold the grey gear in the top corner for **2 seconds**, then enter the PIN. The 
 - Turn the Save, Eraser and Gallery buttons on or off.
 - **Saved doodles**: look at, copy to Photos (Pictures > Toddler Doodle) or delete, one at a time or all at once.
 - Change the PIN and set a recovery word (resets the PIN if you forget it).
-- **App updates**: install the latest version from GitHub, or pick another one.
+- **App updates**: the app quietly checks GitHub for a new version (each time the parent area opens, and at most every 6 hours otherwise). When there is one, this line turns red and says which version. It opens the versions screen: new versions with what changed at the top, then the installed version, older versions behind "Show older versions", and reinstall.
 
 Settings apply straight away.
 
@@ -38,7 +38,9 @@ If Toddler Guard is on, it may close Android's install screen when updating from
 ## How it's built
 
 - Native Android, Kotlin, minSdk 26 (Android 8.0), target/compile SDK 34. UI and icons are drawn in code (no XML layouts, no Compose, no emoji).
-- GitHub Actions builds the APK on every push to `main` and publishes a GitHub Release `v0.1.<run number>` with the APK attached.
+- GitHub Actions builds the APK on every push to `main` and publishes a GitHub Release `v0.1.<run number>` with the APK `ToddlerDoodle-v<version>.apk` attached.
+- Release notes come from `CHANGELOG.md`: add user-facing bullets under `## Next`. The build uses them as the release notes, renames the section to the version, and keeps every release's notes on GitHub in step (`.github/scripts/changelog.py`).
+- The repo must stay public, because the in-app updater reads GitHub without a login.
 - `app/debug.keystore` is a fixed debug key so new APKs install over old ones.
 
 ## Layout
@@ -52,6 +54,6 @@ If Toddler Guard is on, it may close Android's install screen when updating from
 | `ParentActivity.kt` | Parent area |
 | `Gate.kt` | PIN and recovery word dialogs |
 | `Settings.kt` | Saved options and the PIN hash |
-| `Updater.kt`, `InstallReceiver.kt` | In-app updater from GitHub Releases |
+| `Updater.kt`, `InstallReceiver.kt` | Automatic update check and versions screen (GitHub Releases), same as the other apps |
 | `Icons.kt` | Round buttons with icons drawn in code, and the hold-to-use button |
 | `Ui.kt` | Colours, sizes and helpers for the parent area |
