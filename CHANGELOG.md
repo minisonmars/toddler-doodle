@@ -5,6 +5,10 @@ Each build uses the "Next" section as its release notes on GitHub, then renames 
 
 ## Next
 
+- (nothing yet)
+
+## v0.1.4
+
 - Updates now install without Android's extra "Update?" screen (Android 12 and later). The first update after this one still asks once; after that the app just closes and you open it again on the new version
 - Builds are now release builds (signed with the same key, so they install over this one), which should mean fewer Google Play Protect warnings
 
