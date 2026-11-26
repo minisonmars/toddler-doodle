@@ -30,7 +30,7 @@ Settings apply straight away.
 
 1. On the phone, open the [Releases page](https://github.com/minisonmars/toddler-doodle/releases) and download the newest `ToddlerDoodle-v….apk`.
 2. Open it and allow your browser to install apps if Android asks.
-3. Later updates install over the top (every build is signed with the same key), and the saved doodles are kept.
+3. Later updates install over the top (every build is a release build signed with the same key), and the saved doodles are kept. On Android 12 and later, once the app installed the previous version itself, updates go straight in without Android's confirm screen (the first self-update still shows it once).
 
 If you use Toddler Launcher, you can also install and update it from the launcher's parent area under **Recommended apps**.
 If Toddler Guard is on, it may close Android's install screen when updating from inside Toddler Doodle; update from the launcher instead.
@@ -41,7 +41,7 @@ If Toddler Guard is on, it may close Android's install screen when updating from
 - GitHub Actions builds the APK on every push to `main` and publishes a GitHub Release `v0.1.<run number>` with the APK `ToddlerDoodle-v<version>.apk` attached.
 - Release notes come from `CHANGELOG.md`: add user-facing bullets under `## Next`. The build uses them as the release notes, renames the section to the version, and keeps every release's notes on GitHub in step (`.github/scripts/changelog.py`).
 - The repo must stay public, because the in-app updater reads GitHub without a login.
-- `app/debug.keystore` is a fixed debug key so new APKs install over old ones.
+- `app/debug.keystore` is a fixed key so new APKs install over old ones. CI builds `assembleRelease` (not debuggable), signed with it.
 
 ## Layout
 

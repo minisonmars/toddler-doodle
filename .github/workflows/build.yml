@@ -26,19 +26,19 @@ jobs:
         with:
           gradle-version: 8.7
 
-      - name: Build debug APK
-        run: gradle assembleDebug --no-daemon
+      - name: Build release APK
+        run: gradle assembleRelease --no-daemon
 
       - uses: actions/upload-artifact@v4
         with:
-          name: toddler-doodle-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: toddler-doodle-apk
+          path: app/build/outputs/apk/release/app-release.apk
 
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk "ToddlerDoodle-v${APP_VERSION}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "ToddlerDoodle-v${APP_VERSION}.apk"
           # Release notes = the "Next" section of CHANGELOG.md
           python3 .github/scripts/changelog.py notes > notes.md
           gh release create "v${APP_VERSION}" "ToddlerDoodle-v${APP_VERSION}.apk" \

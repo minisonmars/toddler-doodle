@@ -27,6 +27,21 @@ android {
         }
     }
 
+    // Builds are "release" builds (not debuggable), signed with the same fixed key so
+    // they still install over earlier versions. Debuggable apps look more suspicious
+    // to Google Play Protect.
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    lint {
+        // Don't fail the cloud build on lint warnings
+        checkReleaseBuilds = false
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
