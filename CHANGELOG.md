@@ -5,6 +5,10 @@ Each build uses the "Next" section as its release notes on GitHub, then renames 
 
 ## Next
 
+- (nothing yet)
+
+## v0.1.6
+
 - Updates should now really install without Android's "Update?" screen (Android 12 and later): the app now targets Android 15 (API 35), which Android requires for this. This update still asks once; after that the app just closes and you open it again on the new version
 - Screens are kept clear of the status bar, navigation bar and keyboard on Android 15 and later
 
