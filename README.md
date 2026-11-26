@@ -22,7 +22,7 @@ Hold the grey gear in the top corner for **2 seconds**, then enter the PIN. The 
 - Turn the Save, Eraser and Gallery buttons on or off.
 - **Saved doodles**: look at, copy to Photos (Pictures > Toddler Doodle) or delete, one at a time or all at once.
 - Change the PIN and set a recovery word (resets the PIN if you forget it).
-- **App updates**: the app quietly checks GitHub for a new version (each time the parent area opens, and at most every 6 hours otherwise). When there is one, this line turns red and says which version. It opens the versions screen: new versions with what changed at the top, then the installed version, older versions behind "Show older versions", and reinstall.
+- **App updates**: the app quietly checks GitHub for a new version (each time the parent area opens, and at most every 6 hours otherwise). When there is one, this line turns red and says which version. It opens the versions screen: new versions with what changed at the top, each with its own Install button (so you can pick a version that isn't the latest), then the installed version with Reinstall, then older versions behind "Show older versions", each with its notes and its own "Go back to version X" button.
 
 Settings apply straight away.
 
