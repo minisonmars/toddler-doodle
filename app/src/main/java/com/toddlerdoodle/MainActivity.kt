@@ -187,7 +187,7 @@ class MainActivity : Activity() {
             root.addView(f, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
             root.addView(panel, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         }
-        setContentView(root)
+        setContentView(root.fitSystemBars())
         refresh()
     }
 

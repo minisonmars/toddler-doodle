@@ -37,7 +37,7 @@ If Toddler Guard is on, it may close Android's install screen when updating from
 
 ## How it's built
 
-- Native Android, Kotlin, minSdk 26 (Android 8.0), target/compile SDK 34. UI and icons are drawn in code (no XML layouts, no Compose, no emoji).
+- Native Android, Kotlin, minSdk 26 (Android 8.0), target/compile SDK 35 (needed for updates without the confirm screen; screens are padded around the system bars, see `Insets.kt`). UI and icons are drawn in code (no XML layouts, no Compose, no emoji).
 - GitHub Actions builds the APK on every push to `main` and publishes a GitHub Release `v0.1.<run number>` with the APK `ToddlerDoodle-v<version>.apk` attached.
 - Release notes come from `CHANGELOG.md`: add user-facing bullets under `## Next`. The build uses them as the release notes, renames the section to the version, and keeps every release's notes on GitHub in step (`.github/scripts/changelog.py`).
 - The repo must stay public, because the in-app updater reads GitHub without a login.

@@ -121,7 +121,7 @@ class GalleryActivity : Activity() {
                 setPadding(0, dp(12), 0, 0)
             })
             page.addView(empty, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
-            setContentView(root)
+            setContentView(root.fitSystemBars())
             return
         }
 
@@ -147,7 +147,7 @@ class GalleryActivity : Activity() {
         }
         page.addView(ScrollView(this).apply { addView(grid) },
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
-        setContentView(root)
+        setContentView(root.fitSystemBars())
 
         // Thumbnails load one by one in the background
         val list = files
